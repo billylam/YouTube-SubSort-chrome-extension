@@ -2,7 +2,7 @@
   "manifest_version": 2,
 
   "name": "YouTube SubSort",
-  "description": "This extension re-sorts the youtube subscription page based a scoring algorithm instead of by date uploaded.",
+  "description": "This extension re-sorts the youtube subscription page based on a scoring algorithm instead of by date uploaded.",
   "version": "1.0",
 
   "permissions": [
