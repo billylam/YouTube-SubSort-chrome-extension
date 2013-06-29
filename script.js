@@ -6,7 +6,7 @@ $(function() {
   
   // Retrive sort type from options
   chrome.runtime.sendMessage("get_options", function(response){
-    SORT_TYPE = (response["use_watched"] == "true") ? bestNewSort : bestSort;
+    SORT_TYPE = (!response["use_watched"] || response["use_watched"] == "true") ? bestNewSort : bestSort;
   });
   chrome.runtime.sendMessage("show_page_action");
 
