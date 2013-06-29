@@ -1,6 +1,6 @@
 {
   "name": "YouTube\u2122 SubSort",
-  "version": "1.0",
+  "version": "1.00",
   "manifest_version": 2,
   "description": "This extension re-sorts the youtube subscription page based on a scoring algorithm instead of by date uploaded.",
   "icons": { "16": "icon16.png",
