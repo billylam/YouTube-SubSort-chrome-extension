@@ -19,11 +19,12 @@ $(function() {
     // If 'data-score' has been appended, the item has already been sorted.
     // Only sort the subset and append that to the already sorted set.
     if ($(".feed-list-item:not([data-score])").length && REQUEST_PENDING == false){
-      var sortedDivs = $(".feed-list-item[data-score]");
-      var newDivs = $(".feed-list-item:not([data-score])");
+      var newDivs = $(".feed-list").last().children();
       var queryUrl = "https://www.googleapis.com/youtube/v3/videos?id=";
       
-      $(".feed-list").css("visibility", "hidden");
+      var newPage = $(".feed-list").last();
+      // Calling this directly rather than using newPage hides faster...
+      $(".feed-list").last().css("visibility", "hidden");
 
       // Parse video ids, use ids to build query url
       $.each($(newDivs), function(index, div) {
@@ -75,17 +76,17 @@ $(function() {
 
               // Re-Sort, append, cache, update html
               newDivs = $(newDivs).sort(SORT_TYPE);
-              var divs = $.merge($(sortedDivs), $(newDivs));
               //Only refresh the cache if we're on the first page
-              if ( sortedDivs.length == 0 ) {
+              if ( $(".feed-list").length == 1 ) {
                 chrome.storage.local.set({"queryUrl": queryUrl}, function(){});
                 var cachedScores = {};
-                $.each(divs, function(index, div) {
+                $.each(newDivs, function(index, div) {
                   cachedScores[$(div).data("id")] = $(div).data("score");
                 });
                 chrome.storage.local.set({"cachedScores": cachedScores}, function(){});
               }
-              $(".feed-list").replaceWith(divs);
+              $(newPage).html(newDivs);
+              $(newPage).css("visibility", "visible");
               REQUEST_PENDING = false;
               }
               
@@ -103,8 +104,8 @@ $(function() {
               });
               // Re-sort, append, update html
               newDivs = $(newDivs).sort(SORT_TYPE);
-              var divs = $.merge($(sortedDivs), $(newDivs));
-              $(".feed-list").replaceWith(divs);
+              $(newPage).html(newDivs);
+              $(newPage).css("visibility", "visible");
             });
           }
         });
