@@ -1,26 +1,28 @@
 {
-  "manifest_version": 2,
-
-  "name": "YouTube SubSort",
-  "description": "This extension re-sorts the youtube subscription page based on a scoring algorithm instead of by date uploaded.",
+  "name": "YouTube\u2122 SubSort",
   "version": "1.0",
-
-  "permissions": [
-    "http://www.youtube.com/feed/subscriptions",
-    "storage"
-  ],
+  "manifest_version": 2,
+  "description": "This extension re-sorts the youtube subscription page based on a scoring algorithm instead of by date uploaded.",
+  "icons": { "16": "icon16.png",
+             "48": "icon48.png",
+             "128": "icon128.png" },
   
-  "content_scripts": [ {
-    "js": [ "jquery-2.0.2.min.js", "script.js" ],
-    "matches": [ "http://www.youtube.com/feed/subscriptions" ]
-  } ],
-  "page_action": {
-    "default_icon": "icon.png",
-    "default_popup": "popup.html",
-    "default_title": "YouTube Re-Sort"
-  },
   "background": {
     "scripts": [ "background.js" ]
   },
-  "options_page": "popup.html"
+  "content_scripts": [ {
+    "js": [ "jquery-2.0.2.min.js", "script.js" ],
+    "matches": [ "*://*.youtube.com/feed/subscriptions" ],
+    "run_at": "document_start"
+  } ],
+  "options_page": "popup.html",
+  "page_action": {
+    "default_icon": "icon38.png",
+    "default_popup": "popup.html",
+    "default_title": "YouTube Re-Sort"
+  },
+  "permissions": [
+    "http://www.youtube.com/feed/subscriptions",
+    "storage"
+  ]
 }

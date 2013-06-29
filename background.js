@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     chrome.pageAction.show(sender.tab.id);
   }
   if (request == "get_options") {
-    sendResponse({watched: localStorage['watched']});
+    sendResponse({use_watched: localStorage['use_watched']});
   }
 });
 
