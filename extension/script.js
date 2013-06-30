@@ -2,10 +2,12 @@ $(function() {
   var KEYS = ["AIzaSyDKsyHfmMxAGj89tb6JjYH6c_VF4sZNF8E", "AIzaSyB2jX01dizTdoOnrImHVet8LhQxP1WIwW8"];
   var KEY = KEYS[Math.floor(Math.random()*KEYS.length)];
   var REQUEST_PENDING = false;
-  var SORT_TYPE = "bestSort";
+  var IS_USING_WATCHED = true;
+  var SORT_TYPE = "bestNewSort";
   
   // Retrive sort type from options
   chrome.runtime.sendMessage("get_options", function(response){
+    IS_USING_WATCHED = (!response["use_watched"] || response["use_watched"] == "true") ? true : false;
     SORT_TYPE = (!response["use_watched"] || response["use_watched"] == "true") ? bestNewSort : bestSort;
   });
   chrome.runtime.sendMessage("show_page_action");
@@ -26,7 +28,7 @@ $(function() {
       var ids = "";
       
       var newPage = $(".feed-list").last();
-      // Calling this directly rather than using newPage hides faster...
+      // Calling this directly rather than using var newPage hides faster...
       $(".feed-list").last().css("visibility", "hidden");
 
       // Parse video ids, use ids to build query url
@@ -71,11 +73,13 @@ $(function() {
               // https://www.googleapis.com/youtube/v3/videos?id=au0db_NJcek,RuuIDwgmwcQ&part=statistics&key=AIzaSyDKsyHfmMxAGj89tb6JjYH6c_VF4sZNF8E
               var likes;
               var dislikes;
+              var previous = $(".feed-list-item[data-score]")
               $.each(items, function(index, item) {
                 likes = parseInt(item.statistics.likeCount);
                 dislikes = parseInt(item.statistics.dislikeCount);
                 // Calculate scores and append to array divs
                 $(newDivs[index]).attr("data-score", wilson(likes, dislikes));
+                $(newDivs[index]).attr("data-index", index + previous.length);
               });
 
               // Re-Sort, append, cache, update html
@@ -86,7 +90,7 @@ $(function() {
                 chrome.storage.local.set({"ids": ids}, function(){});
                 var cachedScores = {};
                 $.each(newDivs, function(index, div) {
-                  cachedScores[$(div).data("id")] = $(div).data("score");
+                  cachedScores[$(div).data("id")] = [$(div).data("score"), $(div).data("index")];
                 });
                 chrome.storage.local.set({"cachedScores": cachedScores}, function(){});
               }
@@ -105,7 +109,8 @@ $(function() {
               var scoresHash = cache["cachedScores"];
               $.each($(newDivs), function(index, div) {
                 // Append cached scores
-                $(div).attr("data-score", scoresHash[$(div).data("id")]);
+                $(div).attr("data-score", scoresHash[$(div).data("id")][0]);
+                $(div).attr("data-index", scoresHash[$(div).data("id")][1]);
               });
               // Re-sort, append, update html
               newDivs = $(newDivs).sort(SORT_TYPE);
@@ -120,6 +125,26 @@ $(function() {
     function inject() {
       $(".feed-header").prepend('<button id="videos-filter-select" class="yt-uix-button yt-uix-button-default" type="button"  data-button-menu-indicate-selected="true" role="button" aria-pressed="false" aria-expanded="false" aria-haspopup="true" aria-activedescendant="" style="float: right; margin-left: 20px; margin-bottom: 10px; min-width: 75px;"> <span class="yt-uix-button-content" id="injected-content"> Best </span> <img class="yt-uix-button-arrow" src="//s.ytimg.com/yts/img/pixel-vfl3z5WfW.gif" alt="" title=""><ul class=" yt-uix-button-menu yt-uix-button-menu-default" role="menu" aria-haspopup="true" style="display: none;" id="sort-select"><li role="menuitem"="aria-id-44002632540"><span class=" yt-uix-button-menu-item" id="sort-best">Best</span></li><li role="menuitem" id="aria-id-60393735063"><span class=" yt-uix-button-menu-item" id="sort-new"> New </span></li></ul></button>');
     }
+    
+    $("#sort-select").on("click", "li #sort-best", function(event) {
+      DEFAULT_BEHAVIOR = "Best";
+      var divs = $(".feed-list-item").sort(SORT_TYPE);
+      $.each($(".feed-list"), function(index, page) { 
+        if (index != 0) { $(page).html('') };
+      });
+      $(".feed-list").first().html(divs);
+    });
+ 
+    $("#sort-select").on("click", "li #sort-new", function(event) {
+      DEFAULT_BEHAVIOR = "New";
+      var divs = $(".feed-list-item");
+      divs = (IS_USING_WATCHED) ? divs.sort(dateNewSort) : divs.sort(dateSort); 
+      
+      $.each($(".feed-list"), function(index, page) { 
+        if (index != 0) { $(page).html('') };
+      });
+      $(".feed-list").first().html(divs);
+    });
 
     //
     //Helper Functions
@@ -190,5 +215,24 @@ $(function() {
         ( scoreA   < scoreB   ) ?   1 :
         ( scoreA   > scoreB   ) ?  -1 : 0;
     }
-
+    
+      function dateSort(a, b) {
+        var indexA = $(a).data("index");
+        var indexB = $(b).data("index");
+     
+        return ( indexA < indexB ) ?  -1 :
+          ( indexA > indexB ) ? 1 : 0;
+      }
+     
+      function dateNewSort(a, b) {
+        var indexA = $(a).data("index");
+        var indexB = $(b).data("index");
+        var watchedA = $(a).data("watched");
+        var watchedB = $(b).data("watched");
+     
+        return ( watchedA < watchedB ) ?  -1 : 
+          ( watchedA > watchedB ) ?   1 :
+          ( indexA < indexB ) ?  -1 :
+          ( indexA > indexB ) ? 1 : 0;
+      }
   });
