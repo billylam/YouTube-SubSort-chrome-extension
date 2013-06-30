@@ -11,6 +11,7 @@ $(function() {
   chrome.runtime.sendMessage("show_page_action");
 
   // Entry point
+  inject();
   subsort();
   register();
 
@@ -21,6 +22,8 @@ $(function() {
     if ($(".feed-list-item:not([data-score])").length && REQUEST_PENDING == false){
       var newDivs = $(".feed-list").last().children();
       var queryUrl = "https://www.googleapis.com/youtube/v3/videos?id=";
+      // String concat is faster than join in Chrome.
+      var ids = "";
       
       var newPage = $(".feed-list").last();
       // Calling this directly rather than using newPage hides faster...
@@ -39,21 +42,22 @@ $(function() {
 
         $(div).attr("data-watched", $(div).find(".watched").length);
 
-        queryUrl += id;
+        ids += id;
         if (index != newDivs.length-1) {
-          queryUrl += ",";
+          ids += ",";
         }
 
       });
-      queryUrl += "&part=statistics&key=" + KEY;
+      queryUrl += ids + "&part=statistics&key=" + KEY;
 
 
       // If our query call is exactly the same as cached call, just used cached scores
       var cachedUrl;
-      chrome.storage.local.get("queryUrl", function(cache){
+      chrome.storage.local.get(["queryUrl","ids"], function(cache){
         cachedUrl = cache["queryUrl"];
+        cachedIds = cache["ids"];
 
-        if (queryUrl != cachedUrl) {
+        if (ids != cachedIds) {
           // Query YouTube via v3 api for ratings info and set state change callback
           var items;
           var req = new XMLHttpRequest();
@@ -79,6 +83,7 @@ $(function() {
               //Only refresh the cache if we're on the first page
               if ( $(".feed-list").length == 1 ) {
                 chrome.storage.local.set({"queryUrl": queryUrl}, function(){});
+                chrome.storage.local.set({"ids": ids}, function(){});
                 var cachedScores = {};
                 $.each(newDivs, function(index, div) {
                   cachedScores[$(div).data("id")] = $(div).data("score");
@@ -111,6 +116,10 @@ $(function() {
         });
       }
     };
+    
+    function inject() {
+      $(".feed-header").prepend('<button id="videos-filter-select" class="yt-uix-button yt-uix-button-default" type="button"  data-button-menu-indicate-selected="true" role="button" aria-pressed="false" aria-expanded="false" aria-haspopup="true" aria-activedescendant="" style="float: right; margin-left: 20px; margin-bottom: 10px; min-width: 75px;"> <span class="yt-uix-button-content" id="injected-content"> Best </span> <img class="yt-uix-button-arrow" src="//s.ytimg.com/yts/img/pixel-vfl3z5WfW.gif" alt="" title=""><ul class=" yt-uix-button-menu yt-uix-button-menu-default" role="menu" aria-haspopup="true" style="display: none;" id="sort-select"><li role="menuitem"="aria-id-44002632540"><span class=" yt-uix-button-menu-item" id="sort-best">Best</span></li><li role="menuitem" id="aria-id-60393735063"><span class=" yt-uix-button-menu-item" id="sort-new"> New </span></li></ul></button>');
+    }
 
     //
     //Helper Functions
