@@ -84,8 +84,8 @@ $(function() {
   $("#sort-select").on("click", "li #sort-best", function(event) {
     var divs = $(".feed-list-item");
 
+    SORT_TYPE  = (IS_USING_WATCHED) ? bestNewSort : bestSort;
     divs = divs.sort(SORT_TYPE);
-    SORT_TYPE  = (IS_USING_WATCHED) ? bestNewSort : bestSort; 
     $.each($(".feed-list"), function(index, page) { 
       if (index != 0) { $(page).html('') };
     });
