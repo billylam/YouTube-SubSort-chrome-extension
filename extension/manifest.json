@@ -1,6 +1,6 @@
 {
   "name": "YouTube\u2122 SubSort",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifest_version": 2,
   "description": "YouTube\u2122 SubSort improves your subscription feed browsing experience by sorting with a smart rating system instead of date.",
   "icons": { "16": "icon16.png",
