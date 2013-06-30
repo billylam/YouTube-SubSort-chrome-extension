@@ -1,6 +1,6 @@
 {
   "name": "YouTube\u2122 SubSort",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifest_version": 2,
   "description": "YouTube\u2122 SubSort improves your subscription feed browsing experience by sorting with a smart rating system instead of date.",
   "icons": { "16": "icon16.png",
@@ -22,7 +22,7 @@
     "default_title": "YouTube Re-Sort"
   },
   "permissions": [
-    "http://www.youtube.com/feed/subscriptions",
+    "*://*.youtube.com/feed/subscriptions",
     "storage"
   ]
 }
