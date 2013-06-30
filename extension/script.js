@@ -22,43 +22,17 @@ $(function() {
     // If 'data-score' has been appended, the item has already been sorted.
     // Only sort the subset and append that to the already sorted set.
     if ($(".feed-list-item:not([data-score])").length && REQUEST_PENDING == false){
-      var newDivs = $(".feed-list").last().children();
-      var queryUrl = "https://www.googleapis.com/youtube/v3/videos?id=";
-      // String concat is faster than join in Chrome.
-      var ids = "";
-      
-      var newPage = $(".feed-list").last();
-      // Calling this directly rather than using var newPage hides faster...
+      var newDivs = $(".feed-list").last().children();  // only last page needs to be sorted
       $(".feed-list").last().css("visibility", "hidden");
+      
+      var ids = tagMetadata(newDivs);
+      var queryUrl = "https://www.googleapis.com/youtube/v3/videos?id=" + ids + "&part=statistics&key=" + KEY;
 
-      // Parse video ids, use ids to build query url
-      $.each($(newDivs), function(index, div) {
-        // Images are initially loaded as pixels, 'data-thumb' has actual thumbnail img src, so replace
-        images = $(div).find(".yt-thumb-clip-inner img");
-        $.each($(images), function(index, image) {
-          $(image).attr("src", $(image).data("thumb"));
-        });
-
-        id = $(div).find(".feed-item-content-wrapper").data("context-item-id");
-        $(div).attr("data-id", id);
-
-        $(div).attr("data-watched", $(div).find(".watched").length);
-
-        ids += id;
-        if (index != newDivs.length-1) {
-          ids += ",";
-        }
-
-      });
-      queryUrl += ids + "&part=statistics&key=" + KEY;
-
-
-      // If our query call is exactly the same as cached call, just used cached scores
-      var cachedUrl;
+      // If our ids are exactly the same as cached call, just used cached scores
       chrome.storage.local.get(["queryUrl","ids"], function(cache){
-        cachedUrl = cache["queryUrl"];
-        cachedIds = cache["ids"];
-
+        var cachedUrl = cache["queryUrl"];
+        var cachedIds = cache["ids"];
+        // Not cached
         if (ids != cachedIds) {
           // Query YouTube via v3 api for ratings info and set state change callback
           var items;
@@ -66,36 +40,13 @@ $(function() {
           req.open("GET", queryUrl);
           req.onreadystatechange = function (){
             if (this.readyState == 4 && this.status == 200) {
-              items = JSON.parse(this.responseText).items;
-
-              // Parse JSON response
-              // Sample structure:
-              // https://www.googleapis.com/youtube/v3/videos?id=au0db_NJcek,RuuIDwgmwcQ&part=statistics&key=AIzaSyDKsyHfmMxAGj89tb6JjYH6c_VF4sZNF8E
-              var likes;
-              var dislikes;
-              var previous = $(".feed-list-item[data-score]")
-              $.each(items, function(index, item) {
-                likes = parseInt(item.statistics.likeCount);
-                dislikes = parseInt(item.statistics.dislikeCount);
-                // Calculate scores and append to array divs
-                $(newDivs[index]).attr("data-score", wilson(likes, dislikes));
-                $(newDivs[index]).attr("data-index", index + previous.length);
-              });
+              tagNew(this.responseText);
 
               // Re-Sort, append, cache, update html
               newDivs = $(newDivs).sort(SORT_TYPE);
-              //Only refresh the cache if we're on the first page
-              if ( $(".feed-list").length == 1 ) {
-                chrome.storage.local.set({"queryUrl": queryUrl}, function(){});
-                chrome.storage.local.set({"ids": ids}, function(){});
-                var cachedScores = {};
-                $.each(newDivs, function(index, div) {
-                  cachedScores[$(div).data("id")] = [$(div).data("score"), $(div).data("index")];
-                });
-                chrome.storage.local.set({"cachedScores": cachedScores}, function(){});
-              }
-              $(newPage).html(newDivs);
-              $(newPage).css("visibility", "visible");
+              storeCache(queryUrl, ids);
+              $(".feed-list").last().html(newDivs);
+              $(".feed-list").last().css("visibility", "visible");
               REQUEST_PENDING = false;
               }
               
@@ -103,6 +54,7 @@ $(function() {
             req.send();
             REQUEST_PENDING = true;
           }
+          // Cached
           else {
             // Retrieve local cache
             chrome.storage.local.get("cachedScores", function(cache){
@@ -114,8 +66,8 @@ $(function() {
               });
               // Re-sort, append, update html
               newDivs = $(newDivs).sort(SORT_TYPE);
-              $(newPage).html(newDivs);
-              $(newPage).css("visibility", "visible");
+              $(".feed-list").last().html(newDivs);
+              $(".feed-list").last().css("visibility", "visible");
             });
           }
         });
@@ -126,6 +78,9 @@ $(function() {
       $(".feed-header").prepend('<button id="videos-filter-select" class="yt-uix-button yt-uix-button-default" type="button"  data-button-menu-indicate-selected="true" role="button" aria-pressed="false" aria-expanded="false" aria-haspopup="true" aria-activedescendant="" style="float: right; margin-left: 20px; margin-bottom: 10px; min-width: 75px;"> <span class="yt-uix-button-content" id="injected-content"> Best </span> <img class="yt-uix-button-arrow" src="//s.ytimg.com/yts/img/pixel-vfl3z5WfW.gif" alt="" title=""><ul class=" yt-uix-button-menu yt-uix-button-menu-default" role="menu" aria-haspopup="true" style="display: none;" id="sort-select"><li role="menuitem"="aria-id-44002632540"><span class=" yt-uix-button-menu-item" id="sort-best">Best</span></li><li role="menuitem" id="aria-id-60393735063"><span class=" yt-uix-button-menu-item" id="sort-new"> New </span></li></ul></button>');
     }
     
+    //
+    // Event listeners
+    //
     $("#sort-select").on("click", "li #sort-best", function(event) {
       DEFAULT_BEHAVIOR = "Best";
       var divs = $(".feed-list-item").sort(SORT_TYPE);
@@ -147,10 +102,6 @@ $(function() {
     });
 
     //
-    //Helper Functions
-    //
-
-    //
     // Register mutation observer
     function register() {
       var target = document.querySelector(".feed-load-more-container");
@@ -165,6 +116,72 @@ $(function() {
       observer.observe(target, config);
     }
 
+
+    //
+    //Helper Functions
+    //
+    
+    function storeCache(queryUrl, ids) {
+      //Only refresh the cache if we're on the first page
+      if ( $(".feed-list").length == 1 ) {
+        chrome.storage.local.set({"queryUrl": queryUrl}, function(){});
+        chrome.storage.local.set({"ids": ids}, function(){});
+        var cachedScores = {};
+        $.each(newDivs, function(index, div) {
+          cachedScores[$(div).data("id")] = [$(div).data("score"), $(div).data("index")];
+        });
+        chrome.storage.local.set({"cachedScores": cachedScores}, function(){});
+      }
+    }
+    
+    function tagMetadata(newDivs) {
+      var previous = $(".feed-list-item[data-score]");
+      var ids = "";
+      // Parse video ids, use ids to build query url
+      $.each($(newDivs), function(index, div) {
+        // Images are initially loaded as pixels, 'data-thumb' has actual thumbnail img src, so replace
+        images = $(div).find(".yt-thumb-clip-inner img");
+        $.each($(images), function(index, image) {
+          $(image).attr("src", $(image).data("thumb"));
+        });
+
+        id = $(div).find(".feed-item-content-wrapper").data("context-item-id");
+        $(div).attr("data-id", id);
+
+        $(div).attr("data-watched", $(div).find(".watched").length);
+        $(div).attr("data-index", index + previous.length);
+
+        ids += id;
+        if (index != newDivs.length-1) {
+          ids += ",";
+        }
+
+      });
+      
+      return ids;
+    }
+    
+    //
+    function tagScore(json) {
+      items = JSON.parse(json).items;
+
+      // Parse JSON response
+      // Sample structure:
+      // https://www.googleapis.com/youtube/v3/videos?id=au0db_NJcek,RuuIDwgmwcQ&part=statistics&key=AIzaSyDKsyHfmMxAGj89tb6JjYH6c_VF4sZNF8E
+      var likes;
+      var dislikes;
+      $.each(items, function(index, item) {
+        likes = parseInt(item.statistics.likeCount);
+        dislikes = parseInt(item.statistics.dislikeCount);
+        // Calculate scores and append to array divs
+        $(newDivs[index]).attr("data-score", wilson(likes, dislikes));
+      });
+    }
+    
+    //
+    function prepareRequest() {
+    }
+    
     //
     // Scoring algorithm
     // http://www.evanmiller.org/how-not-to-sort-by-average-rating.html
