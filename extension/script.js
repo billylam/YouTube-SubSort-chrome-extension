@@ -15,7 +15,7 @@ $(function() {
   // Entry point
   injectButton();
   subsort();
-  register();
+  registerLoadMoreVideos();
 
   // Main sorting function
   function subsort() {
@@ -96,7 +96,7 @@ $(function() {
 
   //
   // Register mutation observer to detect load more videos
-  function register() {
+  function registerLoadMoreVideos() {
     var target = document.querySelector(".feed-load-more-container");
     var observer = new MutationObserver(function(mutations) {
       mutations.forEach(function(mutation) {
