@@ -8,7 +8,6 @@ $(function() {
   // Retrive sort type from options
   chrome.runtime.sendMessage("get_options", function(response){
     DROP_WATCHED = (!response["use_watched"] || response["use_watched"] == "true") ? true : false;
-    SORT_TYPE = (!response["use_watched"] || response["use_watched"] == "true") ? bestNewSort : bestSort;
   });
   chrome.runtime.sendMessage("show_page_action");
 
@@ -29,7 +28,7 @@ $(function() {
       var queryUrl = "https://www.googleapis.com/youtube/v3/videos?id=" + ids + "&part=statistics&key=" + KEY;
 
       // If our ids are exactly the same as cached call, just used cached scores
-      chrome.storage.local.get(["queryUrl","ids","cachedMetadata"], function(cache){
+      chrome.storage.local.get(["queryUrl","ids","cachedData"], function(cache){
         // Not cached
         if (ids != cache["ids"]) {
           // Query YouTube via v3 api for ratings info and set state change callback
@@ -50,21 +49,33 @@ $(function() {
         }
         // Cached, use retrieved cache
         else {
-          var metadata = cache["cachedMetadata"];
+          var data = cache["cachedData"];
           $.each($(unsortedDivs), function(index, div) {
             // Append cached scores
-            $(div).attr("data-score", metadata[$(div).data("id")][0]);
-            $(div).attr("data-index", metadata[$(div).data("id")][1]);
+            $(div).attr("data-score", data[$(div).data("id")][0]);
+            $(div).attr("data-index", data[$(div).data("id")][1]);
           });
           reappend(unsortedDivs);
         }
       });
     }
   };
-
+  
   // Adds the Best/New button to YouTube bar
   function injectButton() {
-    $(".feed-header").prepend('<button id="videos-filter-select" class="yt-uix-button yt-uix-button-default" type="button"  data-button-menu-indicate-selected="true" role="button" aria-pressed="false" aria-expanded="false" aria-haspopup="true" aria-activedescendant="" style="float: right; margin-left: 20px; margin-bottom: 10px; min-width: 75px;"> <span class="yt-uix-button-content" id="injected-content"> Best </span> <img class="yt-uix-button-arrow" src="//s.ytimg.com/yts/img/pixel-vfl3z5WfW.gif" alt="" title=""><ul class=" yt-uix-button-menu yt-uix-button-menu-default" role="menu" aria-haspopup="true" style="display: none;" id="sort-select"><li role="menuitem"="aria-id-44002632540"><span class=" yt-uix-button-menu-item" id="sort-best">Best</span></li><li role="menuitem" id="aria-id-60393735063"><span class=" yt-uix-button-menu-item" id="sort-new"> New </span></li></ul></button>');
+    $(".feed-header").prepend('<button id="videos-filter-select" class="yt-uix-button yt-uix-button-default" type="button"  data-button-menu-indicate-selected="true" role="button" aria-pressed="false" aria-expanded="false" aria-haspopup="true" aria-activedescendant="" style="float: right; margin-left: 20px; margin-bottom: 10px; min-width: 75px;"> <span class="yt-uix-button-content" id="injected-content"> </span> <img class="yt-uix-button-arrow" src="//s.ytimg.com/yts/img/pixel-vfl3z5WfW.gif" alt="" title=""><ul class=" yt-uix-button-menu yt-uix-button-menu-default" role="menu" aria-haspopup="true" style="display: none;" id="sort-select"><li role="menuitem"="aria-id-44002632540"><span class=" yt-uix-button-menu-item" id="sort-best">Best</span></li><li role="menuitem" id="aria-id-60393735063"><span class=" yt-uix-button-menu-item" id="sort-new"> New </span></li></ul></button>');
+    chrome.storage.local.get("button_selection", function(cache){
+      var selection;
+      if (cache["button_selection"] == "New") {
+        selection = "New";
+        SORT_TYPE = (DROP_WATCHED) ? dateNewSort : dateSort ;
+      }
+      else {
+        selection = "Best";
+        SORT_TYPE = (DROP_WATCHED) ? bestNewSort : bestSort ;
+      }
+      $("#injected-content").html(selection);
+    });
   }
 
   //
@@ -74,6 +85,7 @@ $(function() {
   // 
   // Click on "Best" button
   $("#sort-select").on("click", "li #sort-best", function(event) {
+    chrome.storage.local.set({"button_selection": "Best"}, function(){});
     SORT_TYPE  = (DROP_WATCHED) ? bestNewSort : bestSort;
     sortAllDivs();
   });
@@ -81,6 +93,7 @@ $(function() {
   // 
   // Click on "New" button
   $("#sort-select").on("click", "li #sort-new", function(event) {
+    chrome.storage.local.set({"button_selection": "New"}, function(){});
     SORT_TYPE  = (DROP_WATCHED) ? dateNewSort : dateSort; 
     sortAllDivs();
   });
@@ -125,11 +138,11 @@ $(function() {
     if ( $(".feed-list").length == 1 ) {
       chrome.storage.local.set({"queryUrl": queryUrl}, function(){});
       chrome.storage.local.set({"ids": ids}, function(){});
-      var cachedMetadata = {};
+      var cachedData = {};
       $.each($(unsortedDivs), function(index, div) {
-        cachedMetadata[$(div).data("id")] = [$(div).data("score"), $(div).data("index")];
+        cachedData[$(div).data("id")] = [$(div).data("score"), $(div).data("index")];
       });
-      chrome.storage.local.set({"cachedMetadata": cachedMetadata}, function(){});
+      chrome.storage.local.set({"cachedData": cachedData}, function(){});
     }
   }
 
