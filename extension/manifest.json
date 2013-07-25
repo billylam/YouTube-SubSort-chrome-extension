@@ -1,6 +1,6 @@
 {
   "name": "YouTube\u2122 Subscription Sorter",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "manifest_version": 2,
   "description": "YouTube\u2122 SubSort improves your subscription feed browsing experience by sorting with a smart rating system instead of date.",
   "icons": { "16": "icon16.png",
@@ -11,7 +11,7 @@
     "scripts": [ "background.js" ]
   },
   "content_scripts": [ {
-    "js": [ "jquery-2.0.2.min.js", "script.js" ],
+    "js": [ "jquery-2.0.2.min.js", "util.js", "preload.js", "script.js" ],
     "matches": [ "*://*.youtube.com/feed/subscriptions" ],
     "run_at": "document_start"
   } ],
