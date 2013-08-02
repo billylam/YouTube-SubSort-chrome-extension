@@ -158,7 +158,7 @@ $(function() {
         $(image).attr("src", $(image).data("thumb"));
       });
 
-      id = $(div).find(".feed-item-content-wrapper").data("context-item-id");
+      id = $(div).find('*[data-context-item-id]').data("context-item-id");
       $(div).attr("data-id", id);
       $(div).attr("data-watched", $(div).find(".watched").length);
       $(div).attr("data-index", index + numPrevious);
