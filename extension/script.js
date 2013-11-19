@@ -22,7 +22,7 @@ $(function() {
   function subsort() {
     // If 'data-score' has been appended to anything, the item has already been sorted.
     // Only sort the subset and append that to the already sorted set.
-    if ($(".feed-list-item:not([data-score])").length ){
+    if ($(".feed-item-container:not([data-score])").length ){
       $(".feed-list").last().css("visibility", "hidden");  // This runs faster than calling on jquery var
       var unsortedDivs = $(".feed-list").last().children();
 
@@ -98,7 +98,7 @@ $(function() {
   });
   
   function sortAllDivs() {
-    var allDivsSorted = $(".feed-list-item").sort(sort_type);
+    var allDivsSorted = $(".feed-item-container").sort(sort_type);
     $.each($(".feed-list"), function(index, page) { 
       if (index != 0) { $(page).html('') };
       if (index != 0) { $(page).html('') };
@@ -148,7 +148,7 @@ $(function() {
   //
   // Tag metadata and set ids as a comma-separated string to cache compare
   function tagMetadata(unsortedDivs) {
-    var numPrevious = $(".feed-list-item[data-score]").length;
+    var numPrevious = $(".feed-item-container[data-score]").length;
     ids = "";
     // Parse video ids, use ids to build query url
     $.each($(unsortedDivs), function(index, div) {
