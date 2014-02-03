@@ -13,8 +13,7 @@ $(function() {
         drop_watched = YTSS_PRELOAD.getDropWatched();
       })
     .then(injectButton)
-    .then(subsort)
-    .then(registerLoadMoreVideos);
+    .then(subsort);
 
     
     
@@ -107,20 +106,6 @@ $(function() {
   }
 
   //
-  // Register mutation observer to detect load more videos
-  function registerLoadMoreVideos() {
-    var target = document.querySelector(".feed-load-more-container");
-    var observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        subsort();
-      });    
-    });
-    var config = { attributes: true, childList: true, characterData: true };
-    observer.observe(target, config);
-  }
-
-
-  //
   //Helper Functions
   //
   
@@ -153,7 +138,7 @@ $(function() {
     // Parse video ids, use ids to build query url
     $.each($(unsortedDivs), function(index, div) {
       // Images are initially loaded as pixels, 'data-thumb' has actual thumbnail img src, so replace
-      images = $(div).find(".yt-thumb-clip-inner img");
+      images = $(div).find(".yt-thumb-clip img");
       $.each($(images), function(index, image) {
         $(image).attr("src", $(image).data("thumb"));
       });

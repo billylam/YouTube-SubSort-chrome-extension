@@ -12,7 +12,7 @@
   },
   "content_scripts": [ {
     "js": [ "jquery-2.0.2.min.js", "util.js", "preload.js", "script.js" ],
-    "matches": [ "*://*.youtube.com/feed/subscriptions" ],
+    "matches": [ "*://*.youtube.com/*" ],
     "run_at": "document_start"
   } ],
   "options_page": "popup.html",
@@ -22,7 +22,7 @@
     "default_title": "YouTube Re-Sort"
   },
   "permissions": [
-    "*://*.youtube.com/feed/subscriptions",
+    "*://*/*",
     "storage"
   ]
 }
